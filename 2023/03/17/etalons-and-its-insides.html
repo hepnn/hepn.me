@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title class="pageTitle">E-talons and it's insides</title>
+    <meta name="description" content="todo">
+
+    <link rel="stylesheet" href="A:\Code\hepnweb\styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="aboutMe">
+            <div class="mobileHeader">
+                <div class="mobileAboutTitle">E-talons and it's insides</div>
+            </div>
+
+            <div class="aboutText markdown-body">
+                <h1 class="hideOnMobile">E-talons and it's insides</h1>
+                <p>I recently developed an timetable app for Rigas satiksme, called Rigify, while thinking about what new features I could implement, I thought of the ability to read the tickets using NFC and display the data for users. This data would include initially bought ride count, ride count left, date of ticket purchase, past rides and their information. Just scan the card using NFC on your mobile and display the data, easy enough right? Well, It turned out otherwise and led me to a painful journey of decoding hex data. Researching for information already available I found only a single source from 2009, even tho being a decade old, it was mostly still accurate. here. At the beginning while providing my own findings, I am going to be referencing much of what the author above has written, no need to reinvent the wheel.</p>
+
+                <h1>What's inside the E-talons?</h1>
+                <ul>
+                    <li>The card’s chip follows an ISO 14443-3 (Type A) format and appears to be a Mifare Ultralight MF0ICU1.</li>
+                    <li>The Mifare UL comprises 64 bytes that are separated into 16 blocks, with each block containing 4 bytes. Out of these, 12 blocks are used for the user memory, which totals 48 bytes.</li>
+                    <li>The yellow e-talons card is available for 1, 2, 4, 5, 10, and 20 rides, even though the card’s design supports up to 32 rides.</li>
+                    <li>The card’s UID (serial number) is pre-set at manufacturing and cannot be changed.</li>
+                    <li>OTP (One-Time Programmable) fields are used for registering the remaining rides, which cannot be changed. Therefore, this write-up will not cover how to hack the card and obtain unlimited rides.</li>
+                </ul>
+
+                <p>Example data:</p>
+                <ol>
+                    <li>057B9D6B</li>
+                    <li>5C5D54E9</li>
+                    <li>BC157000</li>
+                    <li>C0FFFFFF</li>
+                    <li>B91D2065</li>
+                    <li>001D513A</li>
+                    <li>00000000</li>
+                    <li>0AA85D28</li>
+                    <li>BB0BA382</li>
+                    <li>0080DA45</li>
+                    <li>8BC20200</li>
+                    <li>0A38A428</li>
+                    <li>BB0BA382</li>
+                    <li>00804346</li>
+                    <li>476A0100</li>
+                </ol>
+                <p> - Card purchase date: 29-12-2019</p>
+                <p> - 10 inital rides, 0 remaining</p>
+                <p> - 1st ride: 20-07-2020 15:49, Bus 3, In direction of Sarkandaugava</p>
+                <p> - 2nd ride: 19-07-2020 19:19, Bus 3, In direction of Sarkandaugava</p>
+
+                <p>Lets decode it</p>
+
+                <h1>The cards memory structure</h1>
+                <p>The e-talon card has a well-defined (but weird) memory structure that stores important information about the card and its usage. Among other things, the card can store up to 2 past rides made, with the oldest ride being overwritten when a new one is added. The memory structure comprises several pages, with each page storing specific information.</p>
+                <p>Newest past ride data is stored on pages <b>12-15</b></p>
+                <p>Oldest past ride data is stored on pages <b>8-11</b></p>
+                <p>The data does not differ in any way for these rides, same structure applies to both.</p>
+
+                <h1>Page 0-1</h1>
+                <h4>Cards UID</h4>
+                <p>It is the number on the back of the e-talon. The card uses a 6-byte UID, which starts from the other end. While the Mifare UL documentation suggests that the UID starts from a different byte, It appears that byte 0 is the manufacturer code and is always constant. Therefore, the card’s UID can be obtained by reversing the byte order and converting it to decimal. The first byte is just added, so the UID can be represented as <b>1-256548552875387.</b></p>
+                <h5>For example:</h5>
+                <img src="uid.png" alt="UID example">
+                <ul>
+                    <li>7B 9D 5C 5D 54 E9</li>
+                    <li>Reversed: E9 54 5D 5C 9D 7B</li>
+                    <li>Decimal: 256548552875387</li>
+                    <li>Add '1' in front: 1-256548552875387</li>
+                </ul>
+
+                <h1>Page 6</h1>
+                <h4>Amount of rides</h4>
+                <p>Page 6 bytes 2 and 3, Is responsible for the amount of initial rides (tickets) purchased. While I haven’t found a definitive algorithm for how these bytes are encoded, I have established that they are close enough to the service code bytes, which are listed below:</p>
+                <ul>
+                    <li>1 ride: AD/AE 39</li>
+                    <li>2 rides: CD/CE 39</li>
+                    <li>4 rides: 0D/0E 3A</li>
+                    <li>5 rides: 2D/2E 3A</li>
+                    <li>10 rides: 4D/4E 3A</li>
+                    <li>20 rides: 6D/6E 3A</li>
+                </ul>
+                <p>By matching the byte to the closest service code in the list, we can determine the initial number of rides with almost 100% accuracy.</p>
+                <h4>Amount of rides left</h4>
+                <p>If the initial rides are 1 to 10, the rides count remaning is stored at page 7</p>
+                <p>If the initial rides are 20, the rides count remaning is stored at page 3</p>
+
+                <h1>Page 12</h1>
+                <h4>Transport type</h4>
+                <p>Page 12 Byte 0 indicates the transport type, if the byte is: </p>
+                <ul>
+                    <li>08 -> Bus</li>
+                    <li>09 -> Tram</li>
+                    <li>0A -> Trolley</li>
+                </ul>
+                <h4>Time and Date</h4>
+                <p>Few keypoints I have found about this:</p>
+                <ul>
+                    <li>Time goes up to 33:36 (hh:mm) and then resets, incrementing a day</li>
+                    <li>Date of purchase is unknown</li>
+                    <li>Page 12 Byte 1 -> Minutes</li>
+                    <p>A minute is incremented every 8 hex numberes. (e.g. 0x60 till 0x68 is 1 minute, 0x68 till 0x70 is another minute)</p>
+                    <li>Page 12 Byte 2 -> Hours (minutes)</li>
+                    <p>32 minutes are incremented every hex number (e.g. 0x63 -> 18:54, 0x64 -> 19:26, 0x65 -> 19:58)</p>
+                    <li>Page 12 Byte 3 -> Date (?)</li>
+                    <p>Something to do with the date, most likely it is ->
+                        Purchase date of the card - 359 days + 4 days for every hex number in byte 3. For example: Purchase date -> 02.09.2021
+                        02.09.2021 - 359 days = 08.09.2020,
+                        08.09.2020 + 5B (91 in dec) = 07.09.2021. Which should be our rides date if we ignore the time.</p>
+                </ul>
+
+                <h1>Page 13</h1>
+                <h4>Transport number</h4>
+                <p>Byte 0 + Byte 1</p>
+                <p>If the first two bytes are E0B3, it is null. It means that there is no ride stored there.</p>
+                <ol>
+                    <li>We convert the bytes using little endian conversion</li>
+                    <li>Convert to decimal</li>
+                    <li>Remove 2 leading numbers and any zeros</li>
+                    <li>We get the bus number, for example:</li>
+                    <ul>
+                        <li>FF03 -> 0x3FF</li>
+                        <li>0x3FF -> 1023</li>
+                        <li>23</li>
+                    </ul>
+                </ol>
+
+                <h1>Page 14</h1>
+                <h4>Direction of ride (stop name)</h4>
+                <h5>Byte 3</h5>
+                <ul>
+                    <li>It seems that byte is responsible for the direction you are going</li>
+                    <li>E.g. 86 represents last stop, changing it to 44 reverses the direction</li>
+                    <li>The range of valid bytes for one direction is from 40 to 7F, while the other direction is represented by bytes from 80 to BF</li>
+                </ul>
+                <h5>Byte 2</h5>
+                <p>This indicates whether the ticket has been checked and scanned by the ticket inspector. If the byte is:</p>
+                <ul>
+                    <li>80 -> Checked</li>
+                    <li>00 -> Not checked</li>
+                </ul>
+
+                <h1>Code</h1>
+                <h5>Reading the card</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        val nfcA = NfcA.get(tag)
+
+                        nfcA.connect()
+                        
+                        val data = ByteArray(16 * 4)
+                        for (page in 0..15) {
+                            val offset = page * 4
+                            val chunk = nfcA.transceive(byteArrayOf(0x30.toByte(), page.toByte()))
+                            System.arraycopy(chunk, 0, data, offset, 4)
+                        }
+                        
+                        return data
+                    </code>
+                </pre>
+                <p>
+                    This function reads data from an NFC tag that supports NFC-A tech (used in e-talons). It connects to the tag and reads 16 pages of 4 bytes each, copying the chunks of data into a ByteArray.
+                    The data we return is going to be used in all of our functions below and will indicate 64 bytes (4*12).
+                </p>
+                <h4>Helper methods</h4>
+                <h5>Byte to hex</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun bytesToHex(bytes: ByteArray): String {
+
+                            // Create a new StringBuilder with enough capacity to hold the output
+                            val hex = StringBuilder(bytes.size * 2)
+                        
+                            // Iterate over each byte in the input array
+                            bytes.forEach { byte ->
+                                // Append the two hexadecimal digits for this byte to the StringBuilder
+                                hex.append(HEX_CHARS[(byte.toInt() and 0xF0) ushr 4])
+                                hex.append(HEX_CHARS[byte.toInt() and 0x0F])
+                            }
+                        
+                            // Return the final string representation of the hexadecimal values
+                            return hex.toString()
+                        }
+                        
+                        // A constant array of the 16 hexadecimal characters
+                        private val HEX_CHARS = "0123456789ABCDEF".toCharArray()
+                    </code>
+                </pre>
+                <h5>Get page from data</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getPage(data: ByteArray, pageNumber: Int): ByteArray {
+                            return data.copyOfRange(pageNumber * 4, (pageNumber + 1) * 4)
+                        }
+                    </code>
+                </pre>
+                <h5>Get byte from page</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getBytes(data: ByteArray, start: Int, end: Int): ByteArray {
+                            return data.copyOfRange(start, end)
+                        }
+                    </code>
+                </pre>
+                <h5>Card UID</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getCardId(data: ByteArray): String? {
+                            val page1 = bytesToHex(byteArrayOf(data[7], data[6], data[5], data[4]))
+                            val page0 = bytesToHex(byteArrayOf(data[1], data[2]))
+                    
+                            val page0Reversed = page0.substring(2, 4) + page0.substring(0, 2)
+                            val reversedUid = page1 + page0Reversed
+                    
+                            val cardIdHex = reversedUid.substring(0, 12)
+                            val cardIdDec = java.lang.Long.parseLong(cardIdHex, 16)
+                            return "1-$cardIdDec"
+                        }
+                    </code>
+                </pre>
+                <h5>Past ride bus numbers</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getBusNumber(page: ByteArray): String {
+                            val busNumber = ((page[1].toInt() and 0xFF) shl 8) or (page[0].toInt() and 0xFF)
+                            var busNumberStr = busNumber.toString().trimStart('0').takeLast(2)
+                            if (busNumberStr.startsWith("0")) {
+                                busNumberStr = busNumberStr.substring(1)
+                            }
+                            return busNumberStr
+                        }
+                    </code>
+                </pre>
+                <p>Usage example</p>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getFirstBusNumber(data: ByteArray): String? {
+                            val page13 = getPage(data, 13)
+                            return if (bytesToHex(getBytes(page13,0, 2)) == "E0B3") {
+                                null
+                            } else {
+                                getBusNumber(page13)
+                            }
+                        }
+                    </code>
+                </pre>
+                <h5>Transport type</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getFirstTransportType(data: ByteArray): String {
+                            val hexString = String.format("%02X", firstByte)
+                            return hexString
+                        }
+                    </code>
+                </pre>
+                <h5>Time and Date</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        fun getFirstRideTime(data: ByteArray): String {
+                            val page12 = getPage(data, 12)
+                            val hexValue = page12[2].toInt() and 0xFF
+                            val hexCount = data.size / 2
+                            // Calculate the total minutes
+                            var totalMinutes = hexValue * 32
+                            // Add additional minutes due to full cycles
+                            val cycles = (hexCount - 1) / 40
+                            totalMinutes += cycles * 40 * 32
+                            // Calculate the hours and minutes separately
+                            var hours = totalMinutes / 60
+                            var minutes = totalMinutes % 60
+                            // Check if the total time has exceeded 33:36
+                            if (hours >= 33 && minutes >= 36) {
+                                hours -= 33
+                                minutes -= 36
+                            }
+                            // Format the time as a string in hh:mm format
+                            return "%02d:%02d".format(hours, minutes)
+                            }
+                    </code>
+                </pre>
+                <h5>Initial ticket amount</h5>
+                <pre>
+                    <code class="language-kotlin">
+                        private fun getInitialTickets(data: ByteArray): Int {
+                            val page6 = getPage(data, 6)
+                            val byte1 = page6[2]
+                            val byte2 = page6[3]
+                        
+                            val serviceCodes = mapOf(
+                                0xAD.toByte() to 1,
+                                0xAE.toByte() to 1,
+                                0xCD.toByte() to 2,
+                                0xCE.toByte() to 2,
+                                0x0D.toByte() to 4,
+                                0x0E.toByte() to 4,
+                                0x2D.toByte() to 5,
+                                0x2E.toByte() to 5,
+                                0x4D.toByte() to 10,
+                                0x4E.toByte() to 10,
+                                0x6D.toByte() to 20,
+                                0x6E.toByte() to 20
+                            )
+                            var closestServiceCode: Byte? = null
+                            for (serviceCodeByte in serviceCodes.keys) {
+                                if (closestServiceCode == null || Math.abs(serviceCodeByte.toInt() - byte1.toInt()) < Math.abs(closestServiceCode.toInt() - byte1.toInt())) {
+                                    closestServiceCode = serviceCodeByte
+                                }
+                            }
+                            return serviceCodes[closestServiceCode] ?: 0
+                            }
+                    </code>
+                </pre>
+
+                <h1>The App</h1>
+                <p>Afterwards I made a Flutter app which utilises my findings, its open source and can be found here: <a href="https://github.com/hepnn/E-talons" target="_blank">https://github.com/hepnn/E-talons</a></p>
+            </div>
+        </div>
+        <!-- Footer -->
+        <footer>
+            <p class="copyright">© Emil Baehr 2020</p>
+            <div class="footerIcons">
+                <a href="https://github.com/emilbaehr">
+                    <div class="socialicon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill-rule: evenodd;
+                                    }
+                                </style>
+                            </defs>
+                            <title>GitHub</title>
+                            <g id="GitHub">
+                                <path class="cls-1" d="M20,8a12,12,0,0,0-3.79,23.39c.6.11.82-.26.82-.58s0-1,0-2c-3.34.72-4-1.61-4-1.61a3.21,3.21,0,0,0-1.33-1.76c-1.09-.74.08-.73.08-.73a2.55,2.55,0,0,1,1.84,1.24,2.56,2.56,0,0,0,3.49,1,2.59,2.59,0,0,1,.76-1.61c-2.66-.3-5.47-1.33-5.47-5.93a4.63,4.63,0,0,1,1.24-3.22A4.28,4.28,0,0,1,13.7,13s1-.33,3.3,1.23a11.18,11.18,0,0,1,6,0C25.3,12.65,26.3,13,26.3,13a4.28,4.28,0,0,1,.12,3.17,4.63,4.63,0,0,1,1.23,3.22c0,4.61-2.8,5.63-5.47,5.92A2.88,2.88,0,0,1,23,27.52c0,1.6,0,2.89,0,3.29s.21.69.82.58A12,12,0,0,0,20,8Z" />
+                            </g>
+                        </svg>
+                    </div>
+                </a>
+                <a href="https://twitter.com/ebaehr">
+                    <div class="socialicon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+                            <title>Twitter</title>
+                            <g id="Twitter">
+                                <path d="M15.49,31A15.65,15.65,0,0,0,31.25,15.27c0-.24,0-.48,0-.71A11.41,11.41,0,0,0,34,11.69a11,11,0,0,1-3.18.87A5.56,5.56,0,0,0,33.25,9.5a11,11,0,0,1-3.51,1.34,5.54,5.54,0,0,0-9.44,5.05A15.68,15.68,0,0,1,8.88,10.1a5.55,5.55,0,0,0,1.71,7.4,5.52,5.52,0,0,1-2.51-.69v.07a5.55,5.55,0,0,0,4.44,5.43,5.55,5.55,0,0,1-2.5.09,5.56,5.56,0,0,0,5.18,3.85,11.08,11.08,0,0,1-6.88,2.37A9.74,9.74,0,0,1,7,28.54,15.67,15.67,0,0,0,15.49,31" />
+                            </g>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </footer>
+    </div>
+
+</body>
+
+
+</html>
