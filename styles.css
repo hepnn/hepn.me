@@ -500,7 +500,21 @@ a:hover .arrow svg {
 
 
 .prohelp {
-    background-color: #204B3F
+    background-color: #204B3F;
+    color: white
+}
+
+.prohelp .projectTitle {
+    color: white
+}
+
+.prohelp .projectDescription {
+    color: white
+}
+
+
+.prohelpPlay {
+    color: white;
 }
 
 .etalons {
