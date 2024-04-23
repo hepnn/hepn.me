@@ -512,7 +512,7 @@ a:hover .arrow svg {
     color: grey
 }
 
-.prohelp link {
+div.link.prohelp {
     color: white
 }
 
