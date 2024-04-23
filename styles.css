@@ -509,13 +509,14 @@ a:hover .arrow svg {
 }
 
 .prohelp .projectDescription {
+    color: grey
+}
+
+.prohelp link {
     color: white
 }
 
 
-.prohelpPlay {
-    color: white;
-}
 
 .etalons {
     background-color: #F7F7F7
