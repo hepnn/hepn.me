@@ -144,7 +144,8 @@ h1 {
 .titleWrapper {
     display: flex;
     width: 100%;
-    justify-content: center
+    justify-content: center;
+    margin-bottom: 60px;
 }
 
 h2 {
@@ -1096,4 +1097,205 @@ ul {
     height: 24px;
     width: 24px;
     margin-right: 10px;
+}
+
+
+
+
+/* CSS */
+.button-6 {
+    align-items: center;
+    background-color: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: .25rem;
+    box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
+    box-sizing: border-box;
+    color: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+    display: block;
+    margin: auto;
+    font-family: system-ui, -apple-system, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    justify-content: center;
+    line-height: 1.25;
+    min-height: 3rem;
+    padding: 1.5rem 4rem;
+    position: relative;
+    text-decoration: none;
+    transition: all 250ms;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    width: auto;
+}
+
+.button-6:hover,
+.button-6:focus {
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
+    color: rgba(0, 0, 0, 0.65);
+}
+
+.button-6:hover {
+    transform: translateY(-1px);
+}
+
+.button-6:active {
+    background-color: #F0F0F1;
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: rgba(0, 0, 0, 0.06) 0 2px 4px;
+    color: rgba(0, 0, 0, 0.65);
+    transform: translateY(0);
+}
+
+
+/* Base styles for the popup */
+.popup {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Fixed positioning to stay in place */
+    z-index: 1000;
+    /* High z-index to ensure it's on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Semi-transparent black background */
+}
+
+/* Container for the form content */
+.popup-content {
+    position: relative;
+    background-color: #ffffff;
+    margin: 10% auto;
+    /* Center the form on the page vertically and horizontally */
+    padding: 40px;
+    border-radius: 8px;
+    /* Rounded corners for the popup */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow for 3D effect */
+    width: 90%;
+    /* Responsive width */
+    max-width: 500px;
+    /* Maximum width */
+}
+
+/* Close button design */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #cccccc;
+    font-size: 36px;
+    /* Larger close icon */
+    font-weight: normal;
+    /* Less emphasis on the font weight */
+}
+
+.close:hover,
+.close:focus {
+    color: #222222;
+    /* Darker grey on hover/focus for better visibility */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .popup-content {
+        margin: 20% auto;
+        /* More vertical space on smaller screens */
+        padding: 20px;
+    }
+}
+
+/* Styling for the popup form elements */
+input[type="text"],
+input[type="email"],
+textarea {
+    width: 100%;
+    /* Full width */
+    padding: 10px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    display: inline-block;
+    border: 1px solid #ccc;
+    /* Light grey border */
+    border-radius: 4px;
+    /* Rounded borders */
+    box-sizing: border-box;
+    /* Include padding and border in the element's width */
+    font-size: 16px;
+    resize: none;
+    /* Adequate font size for readability */
+}
+
+/* Enhance the appearance of the label */
+label {
+    margin-bottom: 8px;
+    display: block;
+    font-size: 14px;
+    color: #333;
+    /* Dark grey color for text */
+}
+
+/* Focus styles for inputs */
+input[type="text"]:focus,
+input[type="email"]:focus,
+textarea:focus {
+    border-color: #555;
+    /* Darker border on focus */
+    outline: none;
+    /* Remove default focus outline */
+}
+
+/* Styling for the submit button */
+input[type="submit"] {
+    align-items: center;
+    background-color: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: .25rem;
+    box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
+    box-sizing: border-box;
+    color: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+    display: block;
+    margin: auto;
+    font-family: system-ui, -apple-system, system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    justify-content: center;
+    line-height: 1.25;
+    min-height: 2rem;
+    padding: 1.5rem 8rem;
+    position: relative;
+    text-decoration: none;
+    transition: all 250ms;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    width: 100%;
+}
+
+input[type="submit"]:hover,
+input[type="submit"]:focus {
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
+    color: rgba(0, 0, 0, 0.65);
+}
+
+input[type="submit"]:hover {
+    transform: translateY(-1px);
+}
+
+input[type="submit"]:active {
+    background-color: #F0F0F1;
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: rgba(0, 0, 0, 0.06) 0 2px 4px;
+    color: rgba(0, 0, 0, 0.65);
+    transform: translateY(0);
 }
