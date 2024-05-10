@@ -1,0 +1,31 @@
+---
+const { label = Astro.currentLocale === "fr" ? "E-mail" : "Email", id } =
+  Astro.props;
+
+interface Props {
+  label?: string;
+  id: string;
+}
+
+const baseClasses = "block w-full rounded-lg px-4 py-3 text-sm";
+const borderClasses = "border border-neutral-200";
+const bgColorClasses = "bg-neutral-50";
+const textClasses = "text-neutral-700";
+const placeholderClasses = "placeholder:text-neutral-500";
+const focusClasses =
+  "focus:border-neutral-200 focus:outline-none focus:ring focus:ring-neutral-400";
+const disabledClasses = "disabled:pointer-events-none disabled:opacity-50";
+const darkFocusClasses = "dark:focus:ring-1";
+---
+
+<div>
+  <label for={id} class="sr-only">{label}</label>
+  <input
+    type="email"
+    name="hs-email-contacts"
+    id={id}
+    autocomplete="email"
+    class={`${baseClasses} ${borderClasses} ${bgColorClasses} ${textClasses} ${placeholderClasses} ${focusClasses} ${disabledClasses} ${darkFocusClasses}`}
+    placeholder="Email"
+  />
+</div>

@@ -1,0 +1,149 @@
+---
+import BaseHead from "../../components/BaseHead.astro";
+import Navigation from "@/components/global/Navigation.astro";
+import Footer from "@/components/global/Footer.astro";
+import { getCollection } from "astro:content";
+import FormattedDate from "../../components/FormattedDate.astro";
+import Picture from "astro/components/Picture.astro";
+
+const pageTitle: string = "Blog - Martins Svikkalns";
+const pageDescription: string = "My writings";
+
+let posts = await getCollection("blog");
+let featuredPost = posts.find((post) => post.data.isFeatured);
+let otherPosts = posts
+    .filter((post) => !post.data.isFeatured)
+    .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+---
+
+<!doctype html>
+<html lang="en" class="animate-fadeIn">
+    <head>
+        <BaseHead title={pageTitle} , description={pageDescription} />
+        <style>
+            main {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 100px;
+            }
+            ul {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+                list-style-type: none;
+                padding: 0;
+            }
+            ul li {
+                flex: 1 1 300px; /* Minimum width of 300px for non-featured posts */
+                text-align: center;
+            }
+            ul li.featured {
+                flex-basis: 100%; /* Full width for the featured post */
+                text-align: center; /* Center text within the featured post */
+            }
+            ul li a {
+                display: block;
+                text-decoration: none;
+                color: inherit;
+            }
+            ul li img {
+                width: 100%;
+                height: auto;
+                max-width: 720px;
+                margin: auto; /* Center images */
+                display: block;
+                border-radius: 12px;
+            }
+            h4.title,
+            p.date {
+                margin: 10px 0;
+            }
+            @media (max-width: 720px) {
+                ul {
+                    gap: 10px;
+                }
+                ul li {
+                    flex-basis: 100%; /* Full width on small screens */
+                }
+            }
+            .skip-link {
+                position: absolute;
+                top: -40px;
+                left: 0;
+                background: #000;
+                color: #fff;
+                padding: 8px;
+                z-index: 100;
+                transition: top 0.3s;
+            }
+
+            .skip-link:focus {
+                top: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <a href="#content" class="skip-link" tabindex="0"
+            >Skip to main content</a
+        >
+
+        <Navigation />
+        <main id="content">
+            <section>
+                <ul>
+                    {
+                        featuredPost && (
+                            <li class="featured">
+                                <a
+                                    href={`/blog/${featuredPost.slug}/`}
+                                    aria-label={`Read more about ${featuredPost.data.title}`}
+                                >
+                                    <Picture
+                                        src={featuredPost.data.heroImage}
+                                        alt={`${featuredPost.data.title} cover`}
+                                        width={720}
+                                        height={480}
+                                        loading="eager"
+                                    />
+                                    <h4 class="title">
+                                        {featuredPost.data.title}
+                                    </h4>
+                                    <p class="date">
+                                        <FormattedDate
+                                            date={featuredPost.data.pubDate}
+                                        />
+                                    </p>
+                                </a>
+                            </li>
+                        )
+                    }
+                    {
+                        otherPosts.map((post) => (
+                            <li>
+                                <a
+                                    href={`/blog/${post.slug}/`}
+                                    aria-label={`Read more about ${post.data.title}`}
+                                >
+                                    <Picture
+                                        src={post.data.heroImage}
+                                        alt={`${post.data.title} cover`}
+                                        width={720}
+                                        height={480}
+                                        loading="eager"
+                                    />
+                                    <h4 class="title">{post.data.title}</h4>
+                                    <p class="date">
+                                        <FormattedDate
+                                            date={post.data.pubDate}
+                                        />
+                                    </p>
+                                </a>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </section>
+        </main>
+        <Footer />
+    </body>
+</html>
