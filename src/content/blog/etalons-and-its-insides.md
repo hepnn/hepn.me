@@ -6,8 +6,6 @@ isFeatured: false
 heroImage: '/etalons.jpg'
 ---
 
-=========================
-
 I recently developed an timetable app for Rigas satiksme, called Rigify, while thinking about what new features I could implement, I thought of the ability to read the tickets using NFC and display the data for users. This data would include initially bought ride count, ride count left, date of ticket purchase, past rides and their information. Just scan the card using NFC on your mobile and display the data, easy enough right? Well, It turned out otherwise and led me to a painful journey of decoding hex data. Researching for information already available I found only a single source from 2009, even tho being a decade old, it was mostly still accurate. here. At the beginning while providing my own findings, I am going to be referencing much of what the author above has written, no need to reinvent the wheel.
 
 What's inside the E-talons?
