@@ -1,5 +1,5 @@
 ---
-title: 'E-talons and it's insides'
+title: 'E-talons and it''s insides'
 description: 'Decoding the data inside the Riga public transport card'
 pubDate: 'May 03 2024'
 isFeatured: false
