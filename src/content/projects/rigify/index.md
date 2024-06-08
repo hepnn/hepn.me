@@ -3,6 +3,7 @@ title: "Rigify"
 description: "Navigate Riga with Ease"
 date: "05/18/2023"
 demoURL: "https://play.google.com/store/apps/details?id=com.yamawagi.rigify"
+icon: "/rigify-icon.webp"
 ---
 
 ---
