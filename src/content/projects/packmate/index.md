@@ -15,6 +15,7 @@ PackMate is an app which helps you pack for your trips. It features checklist cr
 
 - [Landing page](https://packmate.app)
 - [Play Store](https://play.google.com/store/apps/details?id=com.ouji.packmate)
+- [App Store](https://apps.apple.com/us/app/packmate-travel-packing-list/id6554002570)
 
 --- 
 ## Features
@@ -39,7 +40,6 @@ PackMate is an app which helps you pack for your trips. It features checklist cr
 - Template creation
     - Users can create templates for their trips
 - Future plans
-    - iOS release
     - Use of ML for statistics and smart suggestions
 
 ---
