@@ -9,7 +9,7 @@ export const SITE: Site = {
 };
 
 export const HOME: Metadata = {
-    TITLE: "Home",
+    TITLE: "Mobile Dev",
     DESCRIPTION: "About me and my work.",
 };
 
