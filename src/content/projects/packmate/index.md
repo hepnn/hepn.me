@@ -20,6 +20,8 @@ PackMate is an app which helps you pack for your trips. It features checklist cr
 --- 
 ## Features
 
+- AI Generated Checklists
+    - Using OpenAI's api, the app can generate a checklist based on the user's destination, duration of stay, category and description
 - Dynamic category icon generation based on user input
     - This is done by making an API call to [iconify.design](https://iconify.design) and using the returned svg as the icon
 - Realtime collaboration between users
@@ -39,8 +41,6 @@ PackMate is an app which helps you pack for your trips. It features checklist cr
     - Statistics are calculated based on users checklist habits
 - Template creation
     - Users can create templates for their trips
-- Future plans
-    - Use of ML for statistics and smart suggestions
 
 ---
 ## Tech Stack
