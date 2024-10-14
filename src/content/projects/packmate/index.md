@@ -3,7 +3,8 @@ title: "PackMate"
 description: "Your Personal Packing Assistant"
 date: "03/18/2024"
 demoURL: "https://packmate.app"
-icon: "/packmate-icon.webp"
+icon: "/project-icons/packmate-icon.webp"
+order: 1
 ---
 
 ---
